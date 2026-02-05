@@ -1,0 +1,478 @@
+body {
+  margin: 0;
+  background-color: #1e1e1e;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ======================================================
+   GAME AREA = VIEWPORT (RESPONSIVO)
+====================================================== */
+#game-area {
+  width: min(1100px, 100vw);
+  height: min(650px, 100vh);
+  position: relative;
+  overflow: hidden;
+  margin: auto;
+  background: #000;
+}
+
+/* ======================================================
+   WORLD (MAPA)
+====================================================== */
+#world {
+  position: absolute;
+  width: 1100px;
+  height: 650px;
+  background-image: url("img/map/sala-jogos.png");
+  background-size: cover;
+  background-repeat: no-repeat;
+  transform-origin: top left;
+}
+
+/* MAPA */
+#mapa {
+  position: absolute;
+  width: 1100px;
+  height: 650px;
+}
+
+/* PLAYER */
+#player {
+  position: absolute;
+  width: 96px;
+  height: 96px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+}
+
+.name {
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 10px;
+  background: rgba(0,0,0,0.6);
+  border-radius: 10px;
+  font-size: 13px;
+  color: #fff;
+  white-space: nowrap;
+  text-shadow: 1px 1px 2px black;
+}
+
+/* ======================================================
+   AVATAR + NEON
+====================================================== */
+.avatar {
+  width: 96px;
+  height: 96px;
+  image-rendering: pixelated;
+}
+
+/* 🟦 MANEQUIM */
+.avatar.manequim { filter: drop-shadow(0 0 6px #1b1919) drop-shadow(0 0 12px #525151); }
+/* 🟦 CHINDU */
+.avatar.chindu { filter: drop-shadow(0 0 6px #3805af) drop-shadow(0 0 14px #6533ee); }
+/* 🔴 MILO */
+.avatar.milo { filter: drop-shadow(0 0 6px #ff4444) drop-shadow(0 0 14px #cc0000); }
+/* 🟠 BIGJONH */
+.avatar.bigJonh { filter: drop-shadow(0 0 6px #ffaa00) drop-shadow(0 0 14px #ff6600); }
+/* 🟣 VOID */
+.avatar.void { filter: drop-shadow(0 0 6px #8a2be2) drop-shadow(0 0 14px #00bfff); }
+/* 🟣 MIMI */
+.avatar.mimi { filter: drop-shadow(0 0 6px #b366ff) drop-shadow(0 0 14px #7a2cff); }
+/* 🟦 SKATT */
+.avatar.skatt { filter: drop-shadow(0 0 6px #00e5ff) drop-shadow(0 0 14px #0077ff); }
+
+/* ======================================================
+   MENU
+====================================================== */
+#characterMenu {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #111;
+  border: 2px solid #555;
+  border-radius: 12px;
+  padding: 20px;
+  display: none;
+  z-index: 99999;
+  color: white;
+  text-align: center;
+  width: min(420px, 92vw);
+}
+
+#characterMenu button {
+  margin: 8px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+.character-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.character-buttons button {
+  background: #1c1c1c;
+  color: white;
+  border: 1px solid #444;
+  padding: 10px 18px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.character-buttons button:hover {
+  background: #2a2a2a;
+  border-color: #777;
+}
+
+.character-buttons button.active {
+  background: #2b7cff;
+  border-color: #5aa0ff;
+}
+
+.preview-area {
+  display: grid;
+  place-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  margin-bottom: 12px;
+  padding: 14px;
+  border: 1px solid #333;
+  background: #0b0b0b;
+  border-radius: 12px;
+}
+
+.previewAvatar {
+  width: 96px;
+  height: 96px;
+  image-rendering: pixelated;
+}
+
+.previewName {
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: #1c1c1c;
+  border: 1px solid #333;
+  font-size: 13px;
+}
+
+.nameBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.nameBox label {
+  font-size: 12px;
+  color: #aaa;
+  letter-spacing: 0.5px;
+}
+
+#nameInput {
+  background: #0b0b0b;
+  border: 1px solid #333;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+  color: #fff;
+  outline: none;
+  transition: 0.2s;
+  width: 260px;
+  text-align: center;
+}
+
+#nameInput::placeholder { color: #555; }
+
+#nameInput:focus {
+  border-color: #2b7cff;
+  box-shadow: 0 0 6px rgba(43,124,255,0.5);
+}
+
+.selectBtn {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: none;
+  background: #2b7cff;
+  color: #fff;
+  cursor: pointer;
+}
+
+.selectBtn:hover { filter: brightness(1.1); }
+
+/* ======================================================
+   CONTROLES MOBILE (JOYSTICK)
+====================================================== */
+#mobileControls {
+  position: absolute;
+  inset: 0;
+  touch-action: none;
+  pointer-events: none;
+  z-index: 9999;
+
+  /* ✅ por segurança: começa escondido */
+  display: none;
+}
+
+/* joystick + botões recebem evento */
+#mobileControls * {
+  pointer-events: auto;
+}
+
+/* ✅ MOSTRA só em telas pequenas (mobile/tablet) */
+@media (max-width: 900px) {
+  #mobileControls {
+    display: block;
+  }
+}
+
+/* ❌ DESKTOP real: garante esconder mesmo se o DevTools simular touch */
+@media (min-width: 901px) {
+  #mobileControls {
+    display: none !important;
+  }
+}
+
+#joystickBase {
+  pointer-events: auto;
+  position: absolute;
+  left: 18px;
+  bottom: 18px;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  touch-action: none; /* IMPORTANTÍSSIMO */
+}
+
+#joystickStick {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(255,255,255,0.18);
+  border: 1px solid rgba(255,255,255,0.18);
+}
+
+#actionBtn {
+  pointer-events: auto;
+  position: absolute;
+  right: 18px;
+  bottom: 28px;
+  width: 120px;
+  height: 58px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(43,124,255,0.85);
+  color: #fff;
+  font-weight: 600;
+  font-size: 16px;
+  touch-action: manipulation;
+}
+
+#actionBtn:active {
+  transform: scale(0.98);
+}
+
+/* =========================
+   EMOTES MOBILE (SEM SOBREPOR BOTÕES)
+========================= */
+
+/* botão EMOTES (fica acima do botão Ação) */
+#toggleEmotesBtn{
+  pointer-events: auto;
+  position: absolute;          /* ✅ segue o #mobileControls */
+  right: 18px;
+  bottom: 96px;                /* ✅ acima do Ação */
+  width: 120px;
+  height: 44px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.25);
+  background: rgba(20,20,20,0.8);
+  color: #fff;
+  font-weight: 700;
+  z-index: 99999;
+  touch-action: manipulation;
+}
+
+#toggleEmotesBtn:active{
+  transform: scale(0.98);
+}
+
+/* barra de emotes (fica acima do botão EMOTES) */
+#emoteBar{
+  pointer-events: auto;
+  position: absolute;          /* ✅ segue o #mobileControls */
+  right: 18px;
+  bottom: 150px;               /* ✅ acima do botão EMOTES */
+  display: none;               /* ✅ começa fechado */
+  gap: 10px;
+  z-index: 99999;
+}
+
+#emoteBar.open{
+  display: flex;               /* ✅ só abre quando tiver .open */
+}
+
+#emoteBar .emoteBtn{
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.25);
+  background: rgba(20,20,20,0.8);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  touch-action: manipulation;
+}
+
+#emoteBar .emoteBtn:active{
+  transform: scale(0.96);
+}
+
+/* ======================================================
+   (B) PAINEL DA MESA RPG
+====================================================== */
+.panel{
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%,-50%);
+  width: min(520px, 92vw);
+  background: #111;
+  border: 2px solid #444;
+  border-radius: 14px;
+  padding: 16px;
+  color: #fff;
+  z-index: 99999;
+  display: none;
+}
+
+.panel hr{
+  border: none;
+  border-top: 1px solid #333;
+  margin: 12px 0;
+}
+
+.panelRow{
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  align-items: center;
+  margin: 10px 0;
+  flex-wrap: wrap;
+}
+
+.seatsGrid{
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.seatBtn{
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid #333;
+  background: #1c1c1c;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.seatBtn.occupied{ background:#2b2b2b; border-color:#666; }
+.seatBtn.me{ outline: 2px solid #2b7cff; }
+.seatBtn.gm{ outline: 2px solid #ffaa00; }
+
+.btn{
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.15);
+  color: #fff;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.btn.full{ width: 100%; }
+.btn:disabled{ opacity: 0.5; cursor: not-allowed; }
+
+.btn.gray{ background: rgba(80,80,80,0.8); }
+.btn.blue{ background: rgba(43,124,255,0.85); }
+.btn.green{ background: rgba(0,180,90,0.85); }
+.btn.red{ background: rgba(200,40,40,0.85); }
+
+.diceBox{
+  width: 100%;
+  background: #0b0b0b;
+  border: 1px solid #333;
+  border-radius: 14px;
+  padding: 12px;
+  text-align: center;
+}
+
+.diceTitle{ font-size: 12px; color:#aaa; margin-bottom: 6px; }
+.diceResult{ font-size: 38px; font-weight: 900; }
+
+/* =======================
+   DADO D20 OVERLAY
+======================= */
+#diceOverlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(0,0,0,0.55);
+  z-index: 99999;
+}
+
+#diceOverlay.diceHidden {
+  display: none;
+}
+
+#diceOverlay .diceBox {
+  width: 160px;
+  height: 160px;
+  border-radius: 16px;
+  background: rgba(20,20,20,0.9);
+  border: 2px solid rgba(255,255,255,0.15);
+  display: grid;
+  place-items: center;
+  position: relative;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+}
+
+#diceGif {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+}
+
+#diceFinal {
+  position: absolute;
+  bottom: 10px;
+  font-size: 28px;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.7);
+}
+

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>Broken Mirror RPG</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <div id="game-area">
+        <div id="world">
+            <img src="img/map/sala-principal.png" id="mapa" />
+
+            <div id="player">
+                <div class="name">Kauã</div>
+                <img id="avatar" src="img/avatar/manequim/avatar-inicial-frente-96x96.png" class="avatar" />
+            </div>
+        </div>
+
+        <!-- ✅ MENU (NOME + PREVIEW + PERSONAGENS) -->
+        <div id="characterMenu">
+            <h3>Escolha seu personagem</h3>
+
+            <div class="preview-area">
+                <img id="previewAvatar" src="img/avatar/manequim/avatar-inicial-frente-96x96.png" class="previewAvatar manequim" />
+                <div class="previewName" id="previewName">manequim</div>
+            </div>
+
+            <div class="nameBox">
+                <label for="nameInput">Nome do jogador</label>
+                <input id="nameInput" type="text" maxlength="16" placeholder="Digite seu nome..." />
+            </div>
+
+            <button id="selectCharacterBtn" class="selectBtn">Selecionar</button>
+
+            <div class="character-buttons">
+                <button data-character="chindu">Chindu</button>
+                <button data-character="milo">Milo</button>
+                <button data-character="bigJonh">BigJonh</button>
+                <button data-character="void">Void</button>
+                <button data-character="mimi">Mimi</button>
+                <button data-character="skatt">Skatt</button>
+            </div>
+
+            <button id="closeMenu" class="closeBtn">Fechar</button>
+        </div>
+
+        <!-- ======================================================
+            (A) PAINEL DA MESA RPG (SALA DE JOGOS)
+           ====================================================== -->
+        <div id="tablePanel" class="panel">
+            <h3>Mesa de RPG</h3>
+
+            <div class="panelRow">
+                <div><b>Seu assento:</b> <span id="mySeatLabel">nenhum</span></div>
+                <div><b>Mestre:</b> <span id="gmLabel">ninguém</span></div>
+            </div>
+
+            <div class="seatsGrid" id="seatsGrid"></div>
+
+            <div class="panelRow">
+                <button id="leaveSeatBtn" class="btn gray">Levantar</button>
+                <button id="rollD20Btn" class="btn green" disabled>JOGAR D20</button>
+            </div>
+
+            <div class="panelRow">
+                <div class="diceBox">
+                    <div class="diceTitle">Resultado</div>
+                    <div id="diceResult" class="diceResult">-</div>
+                </div>
+            </div>
+
+            <hr />
+
+            <!-- Área do Mestre -->
+            <div id="gmArea" style="display:none;">
+                <h4>Área do Mestre</h4>
+
+                <div class="panelRow">
+                    <button id="lockTableBtn" class="btn red">Travar Mesa</button>
+                    <button id="unlockTableBtn" class="btn gray">Destravar Mesa</button>
+                </div>
+
+                <div class="panelRow">
+                    <label for="turnSelect">Liberar vez para:</label>
+                    <select id="turnSelect"></select>
+                    <button id="grantTurnBtn" class="btn blue">Liberar Vez</button>
+                </div>
+
+                <div class="panelRow">
+                    <button id="forceKickBtn" class="btn red">Remover Player do Assento</button>
+                </div>
+            </div>
+
+            <button id="closeTablePanel" class="btn gray full">Fechar</button>
+        </div>
+
+
+        <!-- ✅ CONTROLES MOBILE (JOYSTICK + AÇÃO + EMOTES) -->
+        <div id="mobileControls">
+
+            <div id="joystickBase">
+                <div id="joystickStick"></div>
+            </div>
+
+            <div id="emoteBar">
+                <button class="emoteBtn" data-emote="1">1</button>
+                <button class="emoteBtn" data-emote="2">2</button>
+                <button class="emoteBtn" data-emote="3">3</button>
+                <button class="emoteBtn" data-emote="4">4</button>
+            </div>
+
+            <button id="toggleEmotesBtn" aria-label="Emotes">EMOTES</button>
+            <button id="actionBtn" aria-label="Ação">Ação</button>
+
+        </div>
+
+        <!-- DADO D20 OVERLAY -->
+        <div id="diceOverlay" class="diceHidden">
+            <div class="diceBox">
+                <img id="diceGif" src="img/dice/d20-roll.gif" alt="Dado rolando" />
+                <div id="diceFinal" class="diceFinal">-</div>
+            </div>
+        </div>
+
+
+        <script src="script.js"></script>
+</body>
+
+</html>
