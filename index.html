@@ -24,7 +24,8 @@
             <h3>Escolha seu personagem</h3>
 
             <div class="preview-area">
-                <img id="previewAvatar" src="img/avatar/manequim/avatar-inicial-frente-96x96.png" class="previewAvatar manequim" />
+                <img id="previewAvatar" src="img/avatar/manequim/avatar-inicial-frente-96x96.png"
+                    class="previewAvatar manequim" />
                 <div class="previewName" id="previewName">manequim</div>
             </div>
 
@@ -125,7 +126,26 @@
             </div>
         </div>
 
+        <!-- =====================
+     CHAT DOCK (PC + MOBILE)
+===================== -->
+        <div id="chatDock" class="chatDock closed">
+            <div class="chatHeader">
+                <div class="chatTitle">💬 Chat</div>
+                <button id="chatToggleBtn" class="chatToggleBtn">Abrir</button>
+            </div>
 
+            <div id="chatMessages" class="chatMessages"></div>
+
+            <form id="chatForm" class="chatForm">
+                <input id="chatInput" class="chatInput" type="text" maxlength="280" placeholder="Digite sua mensagem..."
+                    autocomplete="off" />
+                <button class="chatSendBtn" type="submit">Enviar</button>
+            </form>
+        </div>
+
+
+        <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
         <script src="script.js"></script>
 </body>
 

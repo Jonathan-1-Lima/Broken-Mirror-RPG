@@ -4,7 +4,7 @@
 let currentMapName = "salaPrincipal";
 let isMenuOpen = false;                 // trava o player quando abrir o menu
 let selectedCharacterKey = "manequim";  // personagem selecionado no menu
-let debugEnabled = true;                // começa ligado
+let debugEnabled = false;                // começa desligado
 
 // ======================================================
 // 2) CONFIG DE FUNDO E SPAWN POR MAPA
@@ -304,6 +304,10 @@ selectCharacterBtn.addEventListener("click", () => {
   avatar.classList.add(selectedCharacterKey);
 
   setAvatar("frente");
+
+  // ✅ atualiza nome no servidor do chat
+  if (typeof syncNameToServer === "function") syncNameToServer();
+
   closeCharacterMenu();
 });
 
@@ -334,8 +338,19 @@ function changeMap(mapName, spawnOverride = null) {
   player.style.left = posX + "px";
   player.style.top = posY + "px";
 
+  // ✅ avisa o servidor que você mudou de sala (chat por sala)
+  if (window.socket && window.socket.emit) {
+    window.socket.emit("room:join", mapName);
+  }
+  if (chatDock) chatDock.classList.add("closed");
+  if (chatToggleBtn) chatToggleBtn.textContent = "Abrir";
+
+
   drawDebug();
 }
+
+
+
 
 // ======================================================
 // 13) HITBOX DO PLAYER
@@ -386,7 +401,7 @@ doors.forEach((door) => {
 const salaJogosDoor = {
   ...maps.salaJogos.doors[0],
   x: 520,
-  y: 50,
+  y: 120,
   isOpen: false,
 };
 
@@ -458,14 +473,14 @@ const gameTableInteractionRect = {
 // - x/y aqui é a POSIÇÃO DO PLAYER (top-left)
 // ======================================================
 const tableSeatsPositions = {
-  GM: { x: 510, y: 170 }, // mestre (topo da mesa)
-  P1: { x: 400, y: 350 },
-  P2: { x: 660, y: 290 },
-  P3: { x: 380, y: 360 },
-  P4: { x: 700, y: 360 },
-  P5: { x: 420, y: 430 },
-  P6: { x: 660, y: 430 },
-  P7: { x: 520, y: 470 }
+  GM: { x: 505, y: 170 }, // mestre (topo da mesa)
+  P1: { x: 615, y: 170 },
+  P2: { x: 695, y: 270 },
+  P3: { x: 615, y: 350 },
+  P4: { x: 505, y: 350 },
+  P5: { x: 395, y: 350 },
+  P6: { x: 315, y: 265 },
+  P7: { x: 395, y: 170 }
 };
 const tableExitPosition = {
   x: 520,
@@ -679,12 +694,12 @@ function updateGameTableMessage() {
   const playerCircle = getPlayerCircle();
 
   if (isCircleRectCollision(playerCircle, gameTableInteractionRect)) {
-  gameTableMessage.style.left = (gameTableInteractionRect.x + 10) + "px";
-  gameTableMessage.style.top  = (gameTableInteractionRect.y - 40) + "px";
-  gameTableMessage.style.display = "block";
-} else {
-  gameTableMessage.style.display = "none";
-}
+    gameTableMessage.style.left = (gameTableInteractionRect.x + 10) + "px";
+    gameTableMessage.style.top = (gameTableInteractionRect.y - 40) + "px";
+    gameTableMessage.style.display = "block";
+  } else {
+    gameTableMessage.style.display = "none";
+  }
 
 }
 
@@ -846,8 +861,8 @@ function drawDebug() {
   }
 
   if (currentMapName === "salaJogos") {
-  createBox(gameTableInteractionRect, "rgba(0,200,255,0.25)");
-}
+    createBox(gameTableInteractionRect, "rgba(0,200,255,0.25)");
+  }
 
 
 
@@ -1033,15 +1048,27 @@ gameLoop();
   if (actionBtn) {
     actionBtn.addEventListener("pointerdown", (e) => {
       e.preventDefault();
+      if (isMenuOpen) return;
 
       const playerCircle = getPlayerCircle();
+
+      // ✅ Sala Principal: menu personagem
       if (currentMapName === "salaPrincipal" && isCircleCollision(playerCircle, tableInteraction)) {
         openCharacterMenu();
-      } else {
-        interactDoor();
+        return;
       }
+
+      // ✅ Sala de Jogos: abrir painel da mesa
+      if (currentMapName === "salaJogos" && isCircleRectCollision(playerCircle, gameTableInteractionRect)) {
+        openTablePanel();
+        return;
+      }
+
+      // ✅ senão, tenta porta
+      interactDoor();
     });
   }
+
 })();
 
 // ======================================================
@@ -1430,4 +1457,114 @@ forceKickBtn.addEventListener("click", () => {
 // ======================================================
 closeTablePanel.addEventListener("click", closeTablePanelFn);
 
+// ======================================================
+// (D) CHAT ONLINE (Socket.IO) — TEXTO
+// ======================================================
+const SERVER_URL = "https://broken-mirror-server.onrender.com";
+
+// elementos do chat
+const chatDock = document.getElementById("chatDock");
+const chatToggleBtn = document.getElementById("chatToggleBtn");
+const chatMessages = document.getElementById("chatMessages");
+const chatForm = document.getElementById("chatForm");
+const chatInput = document.getElementById("chatInput");
+
+// conecta no servidor
+window.socket = io(SERVER_URL, { transports: ["websocket"] });
+const socket = window.socket;
+
+
+// abre/fecha dock
+if (chatToggleBtn) {
+  chatToggleBtn.addEventListener("click", () => {
+    const closed = chatDock.classList.toggle("closed");
+    chatToggleBtn.textContent = closed ? "Abrir" : "Fechar";
+    if (!closed) {
+      // focar no input ao abrir
+      setTimeout(() => chatInput?.focus(), 50);
+    }
+  });
+}
+
+// render mensagem
+function addChatMessage({ name, msg, ts }) {
+  if (!chatMessages) return;
+
+  const el = document.createElement("div");
+  el.className = "chatMsg";
+
+  const time = ts ? new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
+  el.innerHTML = `
+    <div class="meta">${name || "player"} • ${time}</div>
+    <div class="text"></div>
+  `;
+
+  // evita injetar HTML
+  el.querySelector(".text").textContent = msg || "";
+
+  chatMessages.appendChild(el);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+// envia mensagem
+if (chatForm) {
+  chatForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    if (!chatInput) return;
+
+    const text = chatInput.value.trim();
+    if (!text) return;
+
+    socket.emit("chat:send", { msg: text });
+    chatInput.value = "";
+  });
+}
+
+// quando conectar, manda seu nome e entra na sala atual
+socket.on("connect", () => {
+  const myName = nameLabel ? nameLabel.textContent : "player";
+  socket.emit("player:setName", myName);
+
+  // entra na sala atual (salaPrincipal ou salaJogos)
+  socket.emit("room:join", currentMapName);
+});
+
+// recebe mensagens
+socket.on("chat:msg", (payload) => {
+  addChatMessage(payload);
+});
+
+// quando você muda seu nome no menu, atualiza no servidor também
+function syncNameToServer() {
+  const myName = nameLabel ? nameLabel.textContent : "player";
+  socket.emit("player:setName", myName);
+}
+
+// ======================================================
+// (D1) ATALHOS DO CHAT (PC): Enter abre, Esc fecha
+// ======================================================
+document.addEventListener("keydown", (e) => {
+  // não interfere se algum menu do jogo estiver aberto
+  if (isMenuOpen) return;
+
+  const isClosed = chatDock?.classList.contains("closed");
+  const focusIsInput = document.activeElement === chatInput;
+
+  // ENTER abre o chat (quando fechado) e foca no input
+  if (e.key === "Enter" && isClosed && !focusIsInput) {
+    e.preventDefault();
+    chatDock.classList.remove("closed");
+    chatToggleBtn.textContent = "Fechar";
+    setTimeout(() => chatInput?.focus(), 50);
+    return;
+  }
+
+  // ESC fecha o chat (quando aberto)
+  if (e.key === "Escape" && !isClosed) {
+    e.preventDefault();
+    chatDock.classList.add("closed");
+    chatToggleBtn.textContent = "Abrir";
+    chatInput?.blur();
+  }
+});
 
