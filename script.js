@@ -199,6 +199,21 @@ const characters = {
       sit: "img/avatar/skatt/skatt-sentado-96x96.png"
     },
   },
+
+  vodoll: {
+  frente: "img/avatar/vodoll/vodoll-frente-96x96.png",
+  costas: "img/avatar/vodoll/vodoll-costa-96x96.png",
+  esquerda: "img/avatar/vodoll/vodoll-esquerda-96x96.png",
+  direita: "img/avatar/vodoll/vodoll-direita-96x96.png",
+  emotes: {
+    1: "img/avatar/vodoll/vodoll-emote1-96x96.png",
+    2: "img/avatar/vodoll/vodoll-emote2-96x96.png",
+    3: "img/avatar/vodoll/vodoll-emote3-96x96.png",
+    4: "img/avatar/vodoll/vodoll-emote4-96x96.png",
+    sit: "img/avatar/vodoll/vodoll-sentado-96x96.png"
+  },
+},
+
 };
 
 let currentCharacter = characters.manequim;
@@ -236,7 +251,7 @@ function updatePreview(characterKey) {
   previewAvatar.src = characters[characterKey].frente;
   previewName.textContent = characterKey;
 
-  previewAvatar.classList.remove("manequim", "chindu", "milo", "bigJonh", "void", "mimi", "skatt");
+  previewAvatar.classList.remove("manequim", "chindu", "milo", "bigJonh", "void", "mimi", "skatt", "vodoll");
   previewAvatar.classList.add(characterKey);
 }
 
@@ -300,7 +315,7 @@ selectCharacterBtn.addEventListener("click", () => {
 
   currentCharacter = characters[selectedCharacterKey];
 
-  avatar.classList.remove("manequim", "chindu", "milo", "bigJonh", "void", "mimi", "skatt");
+  avatar.classList.remove("manequim", "chindu", "milo", "bigJonh", "void", "mimi", "skatt", "vodoll");
   avatar.classList.add(selectedCharacterKey);
 
   setAvatar("frente");

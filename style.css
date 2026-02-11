@@ -87,6 +87,8 @@ body {
 .avatar.mimi { filter: drop-shadow(0 0 6px #b366ff) drop-shadow(0 0 14px #7a2cff); }
 /* 🟦 SKATT */
 .avatar.skatt { filter: drop-shadow(0 0 6px #00e5ff) drop-shadow(0 0 14px #0077ff); }
+/* 🩷 VODOLL */
+.avatar.vodoll { filter: drop-shadow(0 0 6px #ff4fd8) drop-shadow(0 0 14px #a300ff); }
 
 /* ======================================================
    MENU
