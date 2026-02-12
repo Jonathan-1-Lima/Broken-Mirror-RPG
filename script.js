@@ -759,6 +759,7 @@ document.addEventListener("keydown", (e) => {
   if (key === "d" || e.key === "ArrowRight") { movePlayer( speed, 0); setAvatar("direita"); }
 
   if (key === "e") {
+    e.preventDefault();
     const playerCircle = getPlayerCircle();
     if (currentMapName === "salaPrincipal" && isCircleCollision(playerCircle, tableInteraction)) { e.preventDefault(); openCharacterMenu(); return; }
     if (currentMapName === "salaJogos" && isCircleRectCollision(playerCircle, gameTableInteractionRect)) { e.preventDefault(); openTablePanel(); return; }
