@@ -211,8 +211,9 @@ const characters = {
     3: "img/avatar/vodoll/vodoll-emote3-96x96.png",
     4: "img/avatar/vodoll/vodoll-emote4-96x96.png",
     sit: "img/avatar/vodoll/vodoll-sentado-96x96.png"
-  },
+  }
 },
+
 
 };
 
