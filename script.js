@@ -727,88 +727,48 @@ function openSeatMenu() {
 // 21) CONTROLES TECLADO
 // ======================================================
 document.addEventListener("keydown", (e) => {
+  const key = (e.key || "").toLowerCase();
+
   if (isMenuOpen) {
-    if (e.key === "Escape") {
-      // se o painel da mesa estiver aberto, fecha ele
+    if (key === "escape") {
       if (tablePanel && tablePanel.style.display === "block") closeTablePanelFn();
-      // se o menu de personagem estiver aberto, fecha ele
       if (characterMenu && characterMenu.style.display === "block") closeCharacterMenu();
     }
     return;
   }
 
-  // ✅ F1 = Debug
-  if (e.key === "F1") {
-    e.preventDefault();
-    toggleDebug();
-    return;
-  }
+  // Debug
+  if (e.key === "F1") { e.preventDefault(); toggleDebug(); return; }
 
-  // ✅ TESTE DO DADO (F2) — só testa, não trava o resto
-  if (e.key === "F2") {
-    const roll = Math.floor(Math.random() * 20) + 1;
-    animateD20(roll);
-    return;
-  }
-  // ✅ EMOTES NO TECLADO (PC) — teclas 1,2,3,4
-  // Só funciona se não tiver menu aberto e não estiver sentado
-  if (!isMenuOpen && !isSeated) {
-    // permite tanto "1" quanto "Numpad1"
+  // Dado
+  if (e.key === "F2") { const roll = Math.floor(Math.random() * 20) + 1; animateD20(roll); return; }
+
+  // Emotes (usa e.code, pode ficar igual)
+  if (!isSeated) {
     const k = e.code;
-
     if (k === "Digit1" || k === "Numpad1") { e.preventDefault(); playEmote(1); return; }
     if (k === "Digit2" || k === "Numpad2") { e.preventDefault(); playEmote(2); return; }
     if (k === "Digit3" || k === "Numpad3") { e.preventDefault(); playEmote(3); return; }
     if (k === "Digit4" || k === "Numpad4") { e.preventDefault(); playEmote(4); return; }
   }
 
-  // movimento
-  if (e.key === "w" || e.key === "ArrowUp") {
-    movePlayer(0, -speed);
-    setAvatar("costas");
-  }
+  // Movimento (agora com key normalizado)
+  if (key === "w" || e.key === "ArrowUp")    { movePlayer(0, -speed); setAvatar("costas"); }
+  if (key === "s" || e.key === "ArrowDown")  { movePlayer(0,  speed); setAvatar("frente"); }
+  if (key === "a" || e.key === "ArrowLeft")  { movePlayer(-speed, 0); setAvatar("esquerda"); }
+  if (key === "d" || e.key === "ArrowRight") { movePlayer( speed, 0); setAvatar("direita"); }
 
-  if (e.key === "s" || e.key === "ArrowDown") {
-    movePlayer(0, speed);
-    setAvatar("frente");
-  }
-
-  if (e.key === "a" || e.key === "ArrowLeft") {
-    movePlayer(-speed, 0);
-    setAvatar("esquerda");
-  }
-
-  if (e.key === "d" || e.key === "ArrowRight") {
-    movePlayer(speed, 0);
-    setAvatar("direita");
-  }
-
-  // ✅ TECLA E
-  if (e.key === "e" || e.key === "E") {
+  if (key === "e") {
     const playerCircle = getPlayerCircle();
-
-    // Sala Principal: menu personagem
-    if (currentMapName === "salaPrincipal" && isCircleCollision(playerCircle, tableInteraction)) {
-      e.preventDefault();
-      openCharacterMenu();
-      return;
-    }
-
-    // Sala de Jogos: abrir painel da mesa (RPG)
-    if (currentMapName === "salaJogos" && isCircleRectCollision(playerCircle, gameTableInteractionRect)) {
-
-      e.preventDefault();
-      openTablePanel();
-      return;
-    }
-
-    // senão, tenta porta
+    if (currentMapName === "salaPrincipal" && isCircleCollision(playerCircle, tableInteraction)) { e.preventDefault(); openCharacterMenu(); return; }
+    if (currentMapName === "salaJogos" && isCircleRectCollision(playerCircle, gameTableInteractionRect)) { e.preventDefault(); openTablePanel(); return; }
     interactDoor();
   }
 
   player.style.left = posX + "px";
   player.style.top = posY + "px";
 });
+
 // ✅ FECHOU O EVENTO AQUI
 
 
