@@ -1132,6 +1132,19 @@ const myTableState = {
   mySeat: null,               // ex: "P2" ou "GM"
 };
 
+// ✅ A mesa agora vem do servidor
+let serverTableState = null;
+
+// acha em qual assento EU estou, olhando o estado do servidor
+function findMySeatFromState() {
+  if (!serverTableState) return null;
+  const myId = getPlayerId();
+  for (const [seat, occ] of Object.entries(serverTableState.seats)) {
+    if (occ === myId) return seat;
+  }
+  return null;
+}
+
 // 4) Elementos do painel
 const tablePanel = document.getElementById("tablePanel");
 const seatsGrid = document.getElementById("seatsGrid");
@@ -1171,22 +1184,31 @@ function closeTablePanelFn() {
 }
 
 function isGM() {
-  return myTableState.mySeat === tableState.gmSeat;
+  return myTableState.mySeat === "GM";
 }
 
 function getPlayerId() {
-  // id simples: o nome que aparece em cima do player
-  // (depois podemos trocar por id real quando for multiplayer)
-  return nameLabel ? nameLabel.textContent : "player";
+  return (window.socket && window.socket.id) ? window.socket.id : "no-socket";
 }
+
+
 
 // ======================================================
 // (C2) RENDER DO PAINEL
 // ======================================================
 function renderTableUI() {
+  if (!serverTableState) {
+    // ainda não chegou do servidor
+    mySeatLabel.textContent = myTableState.mySeat || "nenhum";
+    gmLabel.textContent = "carregando...";
+    seatsGrid.innerHTML = "";
+    return;
+  }
+
+  const table = serverTableState;
   // labels
   mySeatLabel.textContent = myTableState.mySeat || "nenhum";
-  const gmName = tableState.seats.GM || "ninguém";
+  const gmName = table.seats.GM || "ninguém";
   gmLabel.textContent = gmName;
 
   // mostra área do mestre só se você for o mestre
@@ -1194,7 +1216,7 @@ function renderTableUI() {
 
   // botão rolar dado só se for a sua vez
   const mySeat = myTableState.mySeat;
-  const canRoll = mySeat && tableState.turnSeat === mySeat;
+  const canRoll = mySeat && table.turnSeat === mySeat;
   rollD20Btn.disabled = !canRoll;
 
   // monta grid de assentos
@@ -1206,7 +1228,7 @@ function renderTableUI() {
     const btn = document.createElement("button");
     btn.className = "seatBtn";
 
-    const occupant = tableState.seats[seatId];
+    const occupant = table.seats[seatId];
     const label = occupant ? `${seatId}\n(${occupant})` : `${seatId}\n(vazio)`;
 
     btn.textContent = label;
@@ -1286,66 +1308,32 @@ function standUp() {
 // (C3) CLICOU EM UM ASSENTO
 // ======================================================
 function handleSeatClick(seatId) {
-  const myId = getPlayerId();
+  if (!socket || !socket.connected) return;
 
-  // se já está sentado e clicou em outro assento -> não deixa (simples)
+  // se já está sentado e clicou em outro assento -> não deixa
   if (myTableState.mySeat && myTableState.mySeat !== seatId) {
     alert("Você já está sentado. Levante antes para trocar de lugar.");
     return;
   }
 
-  // se assento vazio -> senta
-  if (!tableState.seats[seatId]) {
-    tableState.seats[seatId] = myId;
-    myTableState.mySeat = seatId;
-
-    // ✅ senta de verdade (teleporta + sprite + trava)
-    sitOnSeat(seatId);
-
-    // se sentou no GM, vira mestre
-    // (aqui já acontece automaticamente por ser o assento GM)
-    renderTableUI();
-    return;
-  }
-
-  // se assento ocupado e você é o mestre -> pode remover
-  if (isGM()) {
-    alert("Assento ocupado. Use o botão 'Remover Player do Assento'.");
-    return;
-  }
-
-  alert("Esse lugar já está ocupado.");
+  // ✅ pede pro servidor sentar
+  socket.emit("table:seat", { seatId, room: currentMapName });
 }
+
 
 // ======================================================
 // (C4) LEVANTAR
 // ======================================================
 leaveSeatBtn.addEventListener("click", () => {
-  if (!myTableState.mySeat) return;
+  if (!socket || !socket.connected) return;
 
-  if (tableState.locked && !isGM()) {
-    alert("A mesa está travada! Só o mestre pode destravar sua saída.");
-    return;
-  }
+  // ✅ pede pro servidor levantar
+  socket.emit("table:leave", { room: currentMapName });
 
-  // libera o assento
-  tableState.seats[myTableState.mySeat] = null;
-
-  // se era sua vez, remove a vez
-  if (tableState.turnSeat === myTableState.mySeat) {
-    tableState.turnSeat = null;
-  }
-
-  myTableState.mySeat = null;
-
-  // ✅ volta a andar e volta sprite normal
-  standUp();
-
-  renderTableUI();
-
-  // ✅ FECHA O PAINEL e destrava o teclado
+  // fecha painel
   closeTablePanelFn();
 });
+
 
 
 // ======================================================
@@ -1414,14 +1402,14 @@ function animateD20(finalValue) {
 // ======================================================
 lockTableBtn.addEventListener("click", () => {
   if (!isGM()) return;
-  tableState.locked = true;
+  table.locked = true;
   alert("Mesa travada! Players não podem levantar.");
   renderTableUI();
 });
 
 unlockTableBtn.addEventListener("click", () => {
   if (!isGM()) return;
-  tableState.locked = false;
+  table.locked = false;
   alert("Mesa destravada! Players podem levantar.");
   renderTableUI();
 });
@@ -1583,6 +1571,45 @@ socket.on("chat:msg", (payload) => {
   addChatMessage(payload);
 });
 
+// ======================================================
+// MESA ONLINE (recebe do servidor)
+// ======================================================
+socket.on("table:state", (state) => {
+  serverTableState = state;
+  myTableState.mySeat = findMySeatFromState();
+  renderTableUI();
+});
+
+// servidor confirmou que VOCÊ sentou
+socket.on("table:youSat", ({ seatId }) => {
+  sitOnSeat(seatId);
+
+  // opcional: avisar que está sentado pros outros (se seu server suportar)
+  socket.emit("player:state", {
+    x: posX,
+    y: posY,
+    dir: currentDirection,
+    characterKey: selectedCharacterKey,
+    seated: true,
+    seatId
+  });
+});
+
+// servidor confirmou que VOCÊ levantou
+socket.on("table:youStood", () => {
+  standUp();
+
+  socket.emit("player:state", {
+    x: posX,
+    y: posY,
+    dir: currentDirection,
+    characterKey: selectedCharacterKey,
+    seated: false,
+    seatId: null
+  });
+});
+
+
 // quando você muda seu nome no menu, atualiza no servidor também
 function syncNameToServer() {
   const myName = nameLabel ? nameLabel.textContent : "player";
@@ -1641,6 +1668,10 @@ function createOtherPlayer(p) {
 
   const img = document.createElement("img");
   img.className = "avatar";
+
+  // aplica a classe do personagem pro neon funcionar
+  img.classList.add(p.characterKey || "manequim");
+
   img.draggable = false;
 
   // sprite inicial
@@ -1659,6 +1690,8 @@ function updateOtherPlayer(p) {
   if (!otherPlayers[p.id]) createOtherPlayer(p);
 
   const obj = otherPlayers[p.id];
+  obj.img.classList.remove("manequim", "chindu", "milo", "bigJonh", "void", "mimi", "skatt", "vodoll");
+  obj.img.classList.add(p.characterKey || "manequim");
   obj.el.style.left = (p.x || 0) + "px";
   obj.el.style.top = (p.y || 0) + "px";
   obj.name.textContent = p.name || "player";
