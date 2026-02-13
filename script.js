@@ -75,6 +75,8 @@ const maps = {
 // 4) ELEMENTOS HTML
 // ======================================================
 const world = document.getElementById("world");
+const otherPlayers = {}; // { id: { el, avatarEl, nameEl } }
+
 const player = document.getElementById("player");
 const avatar = document.getElementById("avatar");
 avatar.classList.add("manequim");
@@ -542,7 +544,6 @@ function isCircleRectCollision(circle, rect) {
 // 18) MOVIMENTO DO PLAYER
 // ======================================================
 function movePlayer(dx, dy) {
-  // ✅ se estiver sentado, não anda
   if (isSeated) return;
 
   const next = { x: posX + dx + 28, y: posY + dy + 60, width: 40, height: 28 };
@@ -567,8 +568,19 @@ function movePlayer(dx, dy) {
   const activeDoors = getActiveDoors();
   for (let d of activeDoors) if (!d.isOpen && isCollision(next, d)) return;
 
+  // ✅ andou de verdade
   posX += dx;
   posY += dy;
+
+  // ✅ manda estado pro servidor (AGORA NO LUGAR CERTO)
+  if (window.socket && window.socket.connected) {
+    window.socket.emit("player:state", {
+      x: posX,
+      y: posY,
+      dir: currentDirection,
+      characterKey: selectedCharacterKey,
+    });
+  }
 }
 
 // ======================================================
@@ -1451,17 +1463,24 @@ window.socket = io(SERVER_URL, { transports: ["websocket"] });
 const socket = window.socket;
 
 
-// abre/fecha dock
+// // abre/fecha dock
 if (chatToggleBtn) {
   chatToggleBtn.addEventListener("click", () => {
     const closed = chatDock.classList.toggle("closed");
     chatToggleBtn.textContent = closed ? "Abrir" : "Fechar";
+
     if (!closed) {
-      // focar no input ao abrir
+      // ✅ abriu o chat -> trava movimento
+      isMenuOpen = true;
       setTimeout(() => chatInput?.focus(), 50);
+    } else {
+      // ✅ fechou o chat -> libera movimento
+      isMenuOpen = false;
+      chatInput?.blur();
     }
   });
 }
+
 
 // render mensagem
 function addChatMessage({ name, msg, ts }) {
@@ -1505,6 +1524,36 @@ socket.on("connect", () => {
   // entra na sala atual (salaPrincipal ou salaJogos)
   socket.emit("room:join", currentMapName);
 });
+socket.on("players:list", (list) => {
+  // ✅ remove todos os outros players antigos da tela
+  Object.keys(otherPlayers).forEach(id => removeOtherPlayer(id));
+
+  // lista inicial da sala
+  list.forEach(p => {
+    if (p.id === socket.id) return;
+    updateOtherPlayer(p);
+  });
+});
+
+socket.on("player:joined", (p) => {
+  if (p.id === socket.id) return;
+  updateOtherPlayer(p);
+});
+
+socket.on("player:moved", (p) => {
+  if (p.id === socket.id) return;
+  updateOtherPlayer(p);
+});
+
+socket.on("player:update", (p) => {
+  if (p.id === socket.id) return;
+  updateOtherPlayer(p);
+});
+
+socket.on("player:left", (id) => {
+  removeOtherPlayer(id);
+});
+
 
 // recebe mensagens
 socket.on("chat:msg", (payload) => {
@@ -1521,27 +1570,85 @@ function syncNameToServer() {
 // (D1) ATALHOS DO CHAT (PC): Enter abre, Esc fecha
 // ======================================================
 document.addEventListener("keydown", (e) => {
-  // não interfere se algum menu do jogo estiver aberto
-  if (isMenuOpen) return;
-
   const isClosed = chatDock?.classList.contains("closed");
   const focusIsInput = document.activeElement === chatInput;
 
-  // ENTER abre o chat (quando fechado) e foca no input
+  // ✅ ENTER abre o chat (quando fechado)
   if (e.key === "Enter" && isClosed && !focusIsInput) {
     e.preventDefault();
     chatDock.classList.remove("closed");
     chatToggleBtn.textContent = "Fechar";
+    isMenuOpen = true; // ✅ trava movimento
     setTimeout(() => chatInput?.focus(), 50);
     return;
   }
 
-  // ESC fecha o chat (quando aberto)
+  // ✅ ESC fecha o chat (quando aberto)
   if (e.key === "Escape" && !isClosed) {
     e.preventDefault();
     chatDock.classList.add("closed");
     chatToggleBtn.textContent = "Abrir";
+    isMenuOpen = false; // ✅ libera movimento
     chatInput?.blur();
+    return;
   }
+
+  // ✅ se o chat estiver aberto, não deixa o resto do jogo pegar teclas
+  if (!isClosed) return;
+
+  // ✅ se outro menu estiver aberto, mantém a regra antiga
+  if (isMenuOpen) return;
 });
+ 
+function createOtherPlayer(p) {
+  if (otherPlayers[p.id]) return;
+
+  const el = document.createElement("div");
+  el.className = "otherPlayer";
+  el.style.position = "absolute";
+  el.style.width = "96px";
+  el.style.height = "96px";
+  el.style.left = (p.x || 0) + "px";
+  el.style.top = (p.y || 0) + "px";
+  el.style.pointerEvents = "none";
+
+  const name = document.createElement("div");
+  name.className = "name";
+  name.textContent = p.name || "player";
+
+  const img = document.createElement("img");
+  img.className = "avatar";
+  img.draggable = false;
+
+  // sprite inicial
+  const ch = characters[p.characterKey] || characters.manequim;
+  img.src = ch[p.dir] || ch.frente;
+
+  el.appendChild(name);
+  el.appendChild(img);
+  world.appendChild(el);
+
+  otherPlayers[p.id] = { el, img, name };
+}
+
+function updateOtherPlayer(p) {
+  if (!p || !p.id) return;
+  if (!otherPlayers[p.id]) createOtherPlayer(p);
+
+  const obj = otherPlayers[p.id];
+  obj.el.style.left = (p.x || 0) + "px";
+  obj.el.style.top = (p.y || 0) + "px";
+  obj.name.textContent = p.name || "player";
+
+  const ch = characters[p.characterKey] || characters.manequim;
+  obj.img.src = ch[p.dir] || ch.frente;
+}
+
+function removeOtherPlayer(id) {
+  const obj = otherPlayers[id];
+  if (!obj) return;
+  obj.el.remove();
+  delete otherPlayers[id];
+}
+
 
