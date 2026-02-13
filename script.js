@@ -203,18 +203,18 @@ const characters = {
   },
 
   vodoll: {
-  frente: "img/avatar/vodoll/vodoll-frente-96x96.png",
-  costas: "img/avatar/vodoll/vodoll-costa-96x96.png",
-  esquerda: "img/avatar/vodoll/vodoll-esquerda-96x96.png",
-  direita: "img/avatar/vodoll/vodoll-direita-96x96.png",
-  emotes: {
-    1: "img/avatar/vodoll/vodoll-emote1-96x96.png",
-    2: "img/avatar/vodoll/vodoll-emote2-96x96.png",
-    3: "img/avatar/vodoll/vodoll-emote3-96x96.png",
-    4: "img/avatar/vodoll/vodoll-emote4-96x96.png",
-    sit: "img/avatar/vodoll/vodoll-sentado-96x96.png"
+    frente: "img/avatar/vodoll/vodoll-frente-96x96.png",
+    costas: "img/avatar/vodoll/vodoll-costa-96x96.png",
+    esquerda: "img/avatar/vodoll/vodoll-esquerda-96x96.png",
+    direita: "img/avatar/vodoll/vodoll-direita-96x96.png",
+    emotes: {
+      1: "img/avatar/vodoll/vodoll-emote1-96x96.png",
+      2: "img/avatar/vodoll/vodoll-emote2-96x96.png",
+      3: "img/avatar/vodoll/vodoll-emote3-96x96.png",
+      4: "img/avatar/vodoll/vodoll-emote4-96x96.png",
+      sit: "img/avatar/vodoll/vodoll-sentado-96x96.png"
+    },
   },
-},
 
 
 };
@@ -323,6 +323,16 @@ selectCharacterBtn.addEventListener("click", () => {
 
   setAvatar("frente");
 
+  if (window.socket && window.socket.connected) {
+    window.socket.emit("player:state", {
+      x: posX,
+      y: posY,
+      dir: currentDirection,
+      characterKey: selectedCharacterKey,
+    });
+  }
+
+
   // ✅ atualiza nome no servidor do chat
   if (typeof syncNameToServer === "function") syncNameToServer();
 
@@ -360,6 +370,19 @@ function changeMap(mapName, spawnOverride = null) {
   if (window.socket && window.socket.emit) {
     window.socket.emit("room:join", mapName);
   }
+  // limpa players que eram da sala anterior (evita “fantasmas”)
+  Object.keys(otherPlayers).forEach(removeOtherPlayer);
+
+  // manda seu estado na nova sala
+  if (window.socket && window.socket.connected) {
+    window.socket.emit("player:state", {
+      x: posX,
+      y: posY,
+      dir: currentDirection,
+      characterKey: selectedCharacterKey,
+    });
+  }
+
   if (chatDock) chatDock.classList.add("closed");
   if (chatToggleBtn) chatToggleBtn.textContent = "Abrir";
 
@@ -765,10 +788,10 @@ document.addEventListener("keydown", (e) => {
   }
 
   // Movimento (agora com key normalizado)
-  if (key === "w" || e.key === "ArrowUp")    { movePlayer(0, -speed); setAvatar("costas"); }
-  if (key === "s" || e.key === "ArrowDown")  { movePlayer(0,  speed); setAvatar("frente"); }
-  if (key === "a" || e.key === "ArrowLeft")  { movePlayer(-speed, 0); setAvatar("esquerda"); }
-  if (key === "d" || e.key === "ArrowRight") { movePlayer( speed, 0); setAvatar("direita"); }
+  if (key === "w" || e.key === "ArrowUp") { movePlayer(0, -speed); setAvatar("costas"); }
+  if (key === "s" || e.key === "ArrowDown") { movePlayer(0, speed); setAvatar("frente"); }
+  if (key === "a" || e.key === "ArrowLeft") { movePlayer(-speed, 0); setAvatar("esquerda"); }
+  if (key === "d" || e.key === "ArrowRight") { movePlayer(speed, 0); setAvatar("direita"); }
 
   if (key === "e") {
     e.preventDefault();
@@ -1599,7 +1622,7 @@ document.addEventListener("keydown", (e) => {
   // ✅ se outro menu estiver aberto, mantém a regra antiga
   if (isMenuOpen) return;
 });
- 
+
 function createOtherPlayer(p) {
   if (otherPlayers[p.id]) return;
 
