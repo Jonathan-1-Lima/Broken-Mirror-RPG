@@ -1152,6 +1152,32 @@ const turnSelect = document.getElementById("turnSelect");
 const grantTurnBtn = document.getElementById("grantTurnBtn");
 const forceKickBtn = document.getElementById("forceKickBtn");
 
+if (rollD20Btn) {
+  // PC
+  rollD20Btn.addEventListener("click", () => {
+    if (!serverTableState) return;
+    const mySeat = myTableState.mySeat;
+    const canRoll = mySeat && serverTableState.turnSeat === mySeat;
+    if (!canRoll) return;
+
+    const roll = Math.floor(Math.random() * 20) + 1;
+    animateD20(roll);
+  });
+
+  // Celular (garante o toque)
+  rollD20Btn.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    if (!serverTableState) return;
+    const mySeat = myTableState.mySeat;
+    const canRoll = mySeat && serverTableState.turnSeat === mySeat;
+    if (!canRoll) return;
+
+    const roll = Math.floor(Math.random() * 20) + 1;
+    animateD20(roll);
+  });
+}
+
+
 // ======================================================
 // (C1) FUNÇÕES ÚTEIS
 // ======================================================

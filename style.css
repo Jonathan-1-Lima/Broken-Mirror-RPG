@@ -601,3 +601,14 @@ body {
   }
 }
 
+#tablePanel{
+  position: fixed;
+  z-index: 9998;
+}
+
+#rollD20Btn{
+  position: relative;
+  z-index: 9999;
+  pointer-events: auto;
+}
+
