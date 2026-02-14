@@ -1184,8 +1184,10 @@ function closeTablePanelFn() {
 }
 
 function isGM() {
-  return myTableState.mySeat === "GM";
+  if (!serverTableState || !socket) return false;
+  return serverTableState.seats.GM === socket.id;
 }
+
 
 function getPlayerId() {
   return (window.socket && window.socket.id) ? window.socket.id : "no-socket";
@@ -1198,7 +1200,6 @@ function getPlayerId() {
 // ======================================================
 function renderTableUI() {
   if (!serverTableState) {
-    // ainda não chegou do servidor
     mySeatLabel.textContent = myTableState.mySeat || "nenhum";
     gmLabel.textContent = "carregando...";
     seatsGrid.innerHTML = "";
@@ -1206,12 +1207,31 @@ function renderTableUI() {
   }
 
   const table = serverTableState;
+
+  // helper: socketId -> nome do player (se achar)
+  function idToName(id) {
+    if (!id) return null;
+
+    // se for você
+    if (socket && id === socket.id) {
+      return nameLabel ? nameLabel.textContent : "você";
+    }
+
+    // tenta achar nos players renderizados
+    const op = otherPlayers[id];
+    if (op && op.name && op.name.textContent) return op.name.textContent;
+
+    // fallback (não achou nome)
+    return "player";
+  }
+
   // labels
   mySeatLabel.textContent = myTableState.mySeat || "nenhum";
-  const gmName = table.seats.GM || "ninguém";
-  gmLabel.textContent = gmName;
 
-  // mostra área do mestre só se você for o mestre
+  const gmId = table.seats.GM;
+  gmLabel.textContent = gmId ? idToName(gmId) : "ninguém";
+
+  // mostra área do mestre só se você for o mestre REAL
   gmArea.style.display = isGM() ? "block" : "none";
 
   // botão rolar dado só se for a sua vez
@@ -1219,21 +1239,24 @@ function renderTableUI() {
   const canRoll = mySeat && table.turnSeat === mySeat;
   rollD20Btn.disabled = !canRoll;
 
-  // monta grid de assentos
+  // monta grid
   seatsGrid.innerHTML = "";
-
   const seatOrder = ["GM", "P1", "P2", "P3", "P4", "P5", "P6", "P7"];
 
-  seatOrder.forEach(seatId => {
+  seatOrder.forEach((seatId) => {
     const btn = document.createElement("button");
     btn.className = "seatBtn";
 
-    const occupant = table.seats[seatId];
-    const label = occupant ? `${seatId}\n(${occupant})` : `${seatId}\n(vazio)`;
+    const occupantId = table.seats[seatId];
+    const occupantName = occupantId ? idToName(occupantId) : null;
+
+    const label = occupantName
+      ? `${seatId}\n(${occupantName})`
+      : `${seatId}\n(vazio)`;
 
     btn.textContent = label;
 
-    if (occupant) btn.classList.add("occupied");
+    if (occupantId) btn.classList.add("occupied");
     if (myTableState.mySeat === seatId) btn.classList.add("me");
     if (seatId === "GM") btn.classList.add("gm");
 
@@ -1241,10 +1264,10 @@ function renderTableUI() {
     seatsGrid.appendChild(btn);
   });
 
-  // preenche select de turno (mestre escolhe quem joga)
+  // preenche select do turno
   if (turnSelect) {
     turnSelect.innerHTML = "";
-    ["P1", "P2", "P3", "P4", "P5", "P6", "P7"].forEach(p => {
+    ["P1", "P2", "P3", "P4", "P5", "P6", "P7"].forEach((p) => {
       const opt = document.createElement("option");
       opt.value = p;
       opt.textContent = p;
@@ -1252,6 +1275,7 @@ function renderTableUI() {
     });
   }
 }
+
 // ======================================================
 // (C) ESTADO: SENTADO / EM PÉ
 // ======================================================
@@ -1574,9 +1598,10 @@ socket.on("chat:msg", (payload) => {
 // ======================================================
 // MESA ONLINE (recebe do servidor)
 // ======================================================
+let serverTable = null;
+
 socket.on("table:state", (state) => {
   serverTableState = state;
-  myTableState.mySeat = findMySeatFromState();
   renderTableUI();
 });
 
