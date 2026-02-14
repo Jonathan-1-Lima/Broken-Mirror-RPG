@@ -1116,16 +1116,6 @@ if (toggleEmotesBtn && emoteBar) {
 // (C) SISTEMA DA MESA RPG — SALA DE JOGOS
 // ======================================================
 
-// 2) Estado da mesa (local, depois a gente faz online)
-const tableState = {
-  locked: false,              // se true, ninguém levanta sem o mestre
-  gmSeat: "GM",               // id do assento do mestre
-  turnSeat: null,             // quem está com a vez (ex: "P3")
-  seats: {                    // ocupação
-    GM: null,
-    P1: null, P2: null, P3: null, P4: null, P5: null, P6: null, P7: null
-  }
-};
 
 // 3) Seu estado (quem você é na mesa)
 const myTableState = {
@@ -1409,7 +1399,7 @@ function animateD20(finalValue) {
     diceRolling = false;
 
     // reabilita botão se ainda for sua vez
-    const canRoll = myTableState.mySeat && tableState.turnSeat === myTableState.mySeat;
+    const canRoll = myTableState.mySeat && serverTableState.turnSeat === myTableState.mySeat;
     if (rollD20Btn) rollD20Btn.disabled = !canRoll;
 
     // esconde overlay depois de mostrar o resultado um pouco
@@ -1424,57 +1414,50 @@ function animateD20(finalValue) {
 // ======================================================
 // (C6) FUNÇÕES DO MESTRE
 // ======================================================
+
 lockTableBtn.addEventListener("click", () => {
   if (!isGM()) return;
-  table.locked = true;
-  alert("Mesa travada! Players não podem levantar.");
-  renderTableUI();
+  if (!serverTableState) return alert("Ainda carregando a mesa...");
+
+  socket.emit("table:lock", { room: currentMapName });
 });
 
 unlockTableBtn.addEventListener("click", () => {
   if (!isGM()) return;
-  table.locked = false;
-  alert("Mesa destravada! Players podem levantar.");
-  renderTableUI();
+  if (!serverTableState) return alert("Ainda carregando a mesa...");
+
+  socket.emit("table:unlock", { room: currentMapName });
 });
 
 grantTurnBtn.addEventListener("click", () => {
   if (!isGM()) return;
+  if (!serverTableState) return alert("Ainda carregando a mesa...");
 
   const seat = turnSelect.value;
 
   // só libera se tiver alguém sentado naquele lugar
-  if (!tableState.seats[seat]) {
+  if (!serverTableState.seats[seat]) {
     alert("Esse assento está vazio.");
     return;
   }
 
-  tableState.turnSeat = seat;
-  diceResultEl.textContent = "-";
-  alert(`Vez liberada para ${seat}!`);
-  renderTableUI();
+  socket.emit("table:turn", { room: currentMapName, seatId: seat });
 });
 
 forceKickBtn.addEventListener("click", () => {
   if (!isGM()) return;
+  if (!serverTableState) return alert("Ainda carregando a mesa...");
 
   const seat = turnSelect.value;
-  if (!tableState.seats[seat]) {
+
+  if (!serverTableState.seats[seat]) {
     alert("Esse assento já está vazio.");
     return;
   }
 
-  // remove o player daquele assento
-  tableState.seats[seat] = null;
-
-  // se era a vez dele, tira a vez
-  if (tableState.turnSeat === seat) {
-    tableState.turnSeat = null;
-  }
-
-  alert(`${seat} foi removido do assento.`);
-  renderTableUI();
+  socket.emit("table:kick", { room: currentMapName, seatId: seat });
 });
+
 
 // ======================================================
 // (C7) ABRIR/FECHAR PAINEL
@@ -1494,6 +1477,7 @@ const chatForm = document.getElementById("chatForm");
 const chatInput = document.getElementById("chatInput");
 
 // conecta no servidor
+
 window.socket = io(SERVER_URL, { transports: ["websocket"] });
 const socket = window.socket;
 
