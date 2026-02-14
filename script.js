@@ -1586,14 +1586,19 @@ let serverTable = null;
 
 socket.on("table:state", (state) => {
   serverTableState = state;
+
+  // ✅ atualiza meu assento olhando o estado do servidor
+  myTableState.mySeat = findMySeatFromState();
+
   renderTableUI();
 });
 
+
 // servidor confirmou que VOCÊ sentou
 socket.on("table:youSat", ({ seatId }) => {
+  myTableState.mySeat = seatId; // ✅ agora você sabe seu lugar
   sitOnSeat(seatId);
 
-  // opcional: avisar que está sentado pros outros (se seu server suportar)
   socket.emit("player:state", {
     x: posX,
     y: posY,
@@ -1604,8 +1609,10 @@ socket.on("table:youSat", ({ seatId }) => {
   });
 });
 
+
 // servidor confirmou que VOCÊ levantou
 socket.on("table:youStood", () => {
+  myTableState.mySeat = null; // ✅ não está mais sentado
   standUp();
 
   socket.emit("player:state", {
@@ -1617,6 +1624,7 @@ socket.on("table:youStood", () => {
     seatId: null
   });
 });
+
 
 
 // quando você muda seu nome no menu, atualiza no servidor também
